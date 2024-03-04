@@ -3,8 +3,6 @@ import { useEffect, useState } from 'react'
 
 const CallInfo = ({apptInfo})=>{
 
-    console.log(apptInfo)
-
     const [ momentText, setMomentText ] = useState(moment(apptInfo.apptDate).fromNow())
     
     useEffect(() => {

@@ -23,6 +23,8 @@ const MainVideoPage = () => {
   const callStatus = useSelector(state=>state.callStatus);
   const streams = useSelector(state=>state.streams);
 
+  console.log(callStatus);
+
   const smallFeedEl = useRef(null);
   const largeFeedEl = useRef(null);
   const uuidRef = useRef(null);
@@ -147,6 +149,9 @@ const MainVideoPage = () => {
   }, [])
 
   const addIceCandidateToPc = (iceC) => {
+
+    console.log("addIceCandidateToPc", iceC);
+
     for(const s in streamsRef.current) {
       if(s !== "localStream"){
         const pc = streamsRef.current[s].peerConnection;
@@ -180,7 +185,10 @@ const MainVideoPage = () => {
           }
           <ChatWindow/>
         </div>
-          <ActionButtons smallFeedEl={smallFeedEl}/>
+          <ActionButtons 
+            smallFeedEl={smallFeedEl}
+            largeFeedEl={largeFeedEl}
+          />
       </div>
     </div>
   )

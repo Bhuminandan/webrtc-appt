@@ -23,8 +23,6 @@ const MainVideoPage = () => {
   const callStatus = useSelector(state=>state.callStatus);
   const streams = useSelector(state=>state.streams);
 
-  console.log(callStatus);
-
   const smallFeedEl = useRef(null);
   const largeFeedEl = useRef(null);
   const uuidRef = useRef(null);
@@ -77,10 +75,18 @@ const MainVideoPage = () => {
     }
   }, [streams]);
 
+
+  // UseEffect to create an offer
+  // This will only happen if we have audio and video
   useEffect(()=>{
     const createOfferAsync = async () => {
         //we have audio and video and we need an offer. Let's make it!
+        // Loop through all streams
         for(const s in streams) {
+
+          // if it's not the local stream
+          // This is why generally in webrtc we call createOffer() only for the remote stream
+          // Obioulsy because that streams will have the peerconnections
             if(s !== "localStream"){
                 try{
                     const pc = streams[s].peerConnection;
@@ -90,16 +96,21 @@ const MainVideoPage = () => {
                     const token = searchParams.get('token');
                     //get the socket from socketConnection
                     const socket = socketConnection(token);
+
+                    // Emit the offer to the signaling server
                     socket.emit('newOffer',{offer, aaptInfo})
-                    //add our event listeners
 
                 }catch(err){
                     console.log(err);
                 }
             }
         }
+        // We have created an offer, and need to update the haveCreatedOffer
+        // So this useEffect should not run again
         dispatch(updateCallStatus('haveCreatedOffer', true));
     }
+
+    // Check if we have audio and video and we haven't created an offer yet
     if(callStatus.audio === "enabled" && callStatus.video === "enabled" && !callStatus.haveCreatedOffer){
         createOfferAsync();
     }
@@ -125,13 +136,17 @@ const MainVideoPage = () => {
     }
 
   }, [callStatus.answer]);
-  
+
+
+  // Useeffect to get the apptInfo from the server
   useEffect(() => {
     const token = searchParams.get('token');
     const fetchDecodedToken = async (token) => {
       const response = await axios.post('https://localhost:9000/validate-link', {
         token
       });
+
+      // Setting the apptInfo
       setApptInfo(response.data.apptData);
       uuidRef.current = response.data.apptData.uuid
     }
@@ -149,14 +164,10 @@ const MainVideoPage = () => {
   }, [])
 
   const addIceCandidateToPc = (iceC) => {
-
-    console.log("addIceCandidateToPc", iceC);
-
     for(const s in streamsRef.current) {
       if(s !== "localStream"){
         const pc = streamsRef.current[s].peerConnection;
         pc.addIceCandidate(iceC);
-        console.log("Added ice candidate to existing page", iceC);
         setShowCallInfo(false);
       }
     }

@@ -10,11 +10,12 @@ const ProDashboard = ()=>{
 
     
     const [ searchParams, setSearchParams ] = useSearchParams();
-    const navigate = useNavigate();
     const [apptInfo, setApptInfo] = useState([]);
+    const navigate = useNavigate();
     const dispatch = useDispatch();
     
 
+    // 
     useEffect(() => {
         const token = searchParams.get('token');
         const socket = socketConnection(token);
@@ -24,12 +25,8 @@ const ProDashboard = ()=>{
     }, [apptInfo])
 
     const joinCall = (appt) => {
-
-        console.log(appt);
-
         const token = searchParams.get('token');
         navigate(`/join-video-pro?token=${token}&uuid=${appt.uuid}&client=${appt.clientName}`);
-        
     }
 
     return(
@@ -70,7 +67,7 @@ const ProDashboard = ()=>{
                                 <div className="dash-box clients-board blue-bg">
                                     <h4>Coming Appointments</h4>
                                     {
-                                        apptInfo.length > 0 && apptInfo.map(appt=>{
+                                       apptInfo.map(appt=>{
 
                                             return (
                                             <div key={appt.uuid + Math.random()}>

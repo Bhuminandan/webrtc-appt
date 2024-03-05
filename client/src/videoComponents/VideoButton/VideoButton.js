@@ -19,6 +19,7 @@ const VideoButton = ({smallFeedEl}) => {
     const streams = useSelector(state=>state.streams);
 
 
+    // UseEffect to fetch video devices, whenevr the caret opens
     useEffect(()=>{
       
       const fetchVideoDevices = async()=>{
@@ -32,16 +33,20 @@ const VideoButton = ({smallFeedEl}) => {
     }, [caretOpen])
 
     const chnageVideoDevice = async (e)=>{
-      // User chnaged video device
+
+      // Getting the device id of the changed device
       const deviceId = e.target.value;
 
-
+      // Making the new constraints
       const newContraints = {
+
+        // Checking if the audioDevice is default, if not then setting it to the callStatus.audioDevice
         audio: callStatus.audioDevice === 'default' ? true : {
           deviceId: {
             exact: callStatus.audioDevice
           }
         },
+        // Setting video device to new deviceId
         video: {
           deviceId: {
             exact: deviceId
@@ -49,38 +54,82 @@ const VideoButton = ({smallFeedEl}) => {
         }
       }
 
+      // Getting new stream with the new contraints
       const stream = await navigator.mediaDevices.getUserMedia(newContraints);
 
+      // Update the redux
       dispatch(updateCallStatus('videoDevice', deviceId));
       dispatch(updateCallStatus('video', 'enabled'));
 
+      // Setting the video element to the new stream
       smallFeedEl.current.srcObject = stream;
 
+      // updating the local stream
       dispatch(addStream('localStream', stream));
 
-      const tracks  = stream.getVideoTracks();
+      // Getting the tracks from new stream
+      const [videoTracks]  = stream.getVideoTracks();
+
+      for(const s in streams) {
+        if(s !== 'localStream') {
+          // Get senders will grab all the rtpSenders from the peer connection has
+          const senders = streams[s].peerConnection.getSenders();
+
+          // Find the sender that has the video track
+          // Basically we are finding the sender which is incharge of video tracks
+          const sender = senders.find((sender) => {
+            if (sender.track) {
+              // If this track is the video track then return true
+              return sender.track.kind === videoTracks.kind;
+            } else {
+              return false;
+            }
+          });
+          // Sender is RTPSender so it has replaceTrack method
+          sender.replaceTrack(videoTracks);
+        }
+      }
 
     }
 
+    // Function to start/stop video
     const startStopVideo = ()=>{
 
+      // If the video is enabled, we need to disable it
       if (callStatus.video === 'enabled' ) {
+
+        // Update the redux
         dispatch(updateCallStatus('video', 'disabled'));
+        
+        // Mute the video, instead of disconnecing the whole connection
         const tracks = smallFeedEl.current.srcObject.getVideoTracks();
         tracks.forEach(track => track.enabled = false);
+
       } else if(callStatus.video === 'disabled'){ 
+        // If the video is disabled, we need to enable it, by enabling the tracks
+        // Update the redux
         dispatch(updateCallStatus('video', 'enabled'));
+        // Unmute the video
         const tracks = smallFeedEl.current.srcObject.getVideoTracks();
         tracks.forEach(track => track.enabled = true);
       } else if(callStatus.haveMedia) {
+
+        // If we already have media, we need to start the video
         smallFeedEl.current.srcObject = streams.localStream.stream;
+
         startLocalVideoStream(streams, dispatch)
       } else {
+
+        // If we don't have media, we need to wait for it
         setPendingUpdate(true);
       }
     }
 
     useEffect(()=>{
+
+      // This useEffect will run once the haveMedia gets updates
+      // Have media actually gets updated
+      // fetchMedia function in MainVideoPage.jsx
         if(pendingUpdate && callStatus.haveMedia){
             setPendingUpdate(false);
             smallFeedEl.current.srcObject = streams.localStream.stream;
@@ -101,8 +150,8 @@ const VideoButton = ({smallFeedEl}) => {
                            changeHandler={chnageVideoDevice} 
                            deviceList={videoDevices}
                            type="video"
-                           /> : 
-                           null
+                      /> : 
+                      null
         }
     </div>
   )

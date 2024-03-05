@@ -8,10 +8,19 @@ const linkSecret = 'lsjdfkasjhdfklhaslkdfjhalskjh';
 const jwt = require('jsonwebtoken');
 
 // Varible to hold the data of the connected professionals
-const connectedProffessionsals = [];
+const connectedProffessionsals = [
+    // socketId:,
+    // fullName,
+    // proId
+];
 
 // Varible to hold the data of the connected clients
-const connectedClients = [];
+const connectedClients = [
+    // clientName,
+    // uuid,
+    // professionalMeetingWith,
+    // socketId
+];
 
 // Varible to hold all the known offers
 const allKnownOffers = {
@@ -66,14 +75,21 @@ io.on('connection', (socket) => {
         }
 
         // Getting the array of proffesional appointments
+        // Getting these hardcoded appointments from server.js file
         const professionalAppointments = app.get('proffessionalsAppointments');
 
         // Emitting the appt data to the client, after filtering it with correct data
-        socket.emit('apptData', professionalAppointments.filter(pa=> pa.professionalsFullName === fullName));
+        const apptData = professionalAppointments.filter(a => a.professionalsFullName === fullName);
+        socket.emit('apptData', apptData);
 
         // Loop through all known offers and send out to proffestions
         // the onces that belong to her or him
+        // Looping through allKnownOffers
         for(const key in allKnownOffers) {
+
+            // If the proffesionals full name matches with the one in the offer
+            // Then send that offer to the perticular proffesional
+            // Or in other words emit that offer data to the perticular proffesional socket id
             if (allKnownOffers[key].proffessionalsFullName === fullName) {
                 io.to(socket.id).emit('newOfferWaiting', allKnownOffers[key]);
             }
@@ -124,8 +140,18 @@ io.on('connection', (socket) => {
         }
     })
 
+    // socket listener for new offer coming from the client
     socket.on('newOffer', ({offer, aaptInfo})=> {
 
+        // aaptInfo will look like this
+        // apptInfo = {
+        //     professionalsFullName: "Peter Chan, J.D.",
+        //     apptDate: Date.now() + 500000,
+        //     uuid:1,
+        //     clientName: "Jim Jones",
+        // }
+
+        // Updating the allKnownOffers with the apptInfo
         allKnownOffers[aaptInfo.uuid] = {
             ...aaptInfo,
             offer, 
@@ -134,23 +160,34 @@ io.on('connection', (socket) => {
             AnswerIceCandidates: [],
         };
 
+        // Getting the professional appointments from the server file
         const professionalAppointments = app.get('proffessionalsAppointments');
+
+        // Finding the proffessional appointment with the uuid in the apptInfo
         const pa = professionalAppointments.find(p => p.uuid == aaptInfo.uuid);
 
+        // if yes, update the waiting status
         if (pa) {
             pa.waiting = true;
         }
 
-
-
+        // Gathering the info of the proffesional, if they are connected
         const p = connectedProffessionsals.find((p) => {
             return p.fullName === aaptInfo.professionalsFullName
         });
 
+        // Emitting the new offers to that proffesional
         if (p) {
             const socketId = p.socketId;
-            socket.to(socketId).emit('newOfferWaiting',allKnownOffers[aaptInfo.uuid])
-            socket.to(socketId).emit('apptData',professionalAppointments.filter(pa=>pa.professionalsFullName === aaptInfo.professionalsFullName))
+
+            // Emitting the new offer to the proffesional
+            socket.to(socketId).emit('newOfferWaiting', allKnownOffers[aaptInfo.uuid]);
+
+            // This line helps to again send the professional appointment data to the proffesional
+            // Because we have just added the is waiting true to the proffesionalAppointments
+            // So if we not send this data again it will not be visible to the client side
+            const apptDataTosend = professionalAppointments.filter(pa=>pa.professionalsFullName === aaptInfo.professionalsFullName);
+            socket.to(socketId).emit('apptData', apptDataTosend);
         }
     });
 

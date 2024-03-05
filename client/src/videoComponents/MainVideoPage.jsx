@@ -118,6 +118,8 @@ const MainVideoPage = () => {
 }, [callStatus.audio, callStatus.video, callStatus.haveCreatedOffer]);
   
 
+
+// UseEffect to add the answer to the remote description
   useEffect(()=>{
 
     const asyncAddAnswer = async()=>{

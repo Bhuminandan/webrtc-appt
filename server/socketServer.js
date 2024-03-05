@@ -128,12 +128,17 @@ io.on('connection', (socket) => {
     // socket listener for new answer coming from the client
     socket.on('newAnswer', ({answer, uuid})=> {
     //  Emit this to the client
+
+    // Finding the correct client from the connectedClients array and uuid 
+    // That we are receiving from frontend
         const socketSendTo = connectedClients.find(c => c.uuid == uuid);
 
+        // If client exists, send the answer to the client
         if (socketSendTo) {
             socket.to(socketSendTo.socketId).emit('answerToClient', answer);
         }
 
+        // Updating the allKnownOffers with the answer
         const knownOffer = allKnownOffers[uuid];
         if (knownOffer) {
             knownOffer.Answer = answer;

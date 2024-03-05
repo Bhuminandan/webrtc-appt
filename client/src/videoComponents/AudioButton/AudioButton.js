@@ -83,7 +83,7 @@ const AudioButton = ({ smallFeedEl }) => {
               // Setting the audio device to the new deviceId
                 audio: {
                     deviceId: {
-                      exact: deviceId
+                      ideal: deviceId
                     }
                 },
                 // if the video device was default, we need to set it to true

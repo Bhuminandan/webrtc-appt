@@ -36,12 +36,19 @@ const ProMainVideoPage = () => {
     }
     const fetchMedia = async () => {
       try {
+        // Getting the user permission
         const stream = await navigator.mediaDevices.getUserMedia(contraints);
         dispatch(updateCallStatus('haveMedia', true));
         // Dispatch action will send this stream to redux
         dispatch(addStream('localStream', stream));
+
+        // Making the peer connection and getting the remote stream
         const { peerConnection, remoteStream } = await createPeerConnection(addIce);
+
+        // Dispatch action will send this stream to redux with peer connection
         dispatch(addStream('remote1', remoteStream, peerConnection));
+
+        // Set the large feed to the remote stream
         largeFeedEl.current.srcObject = remoteStream;
       } catch (error) {
         console.log(error);
@@ -58,8 +65,6 @@ const ProMainVideoPage = () => {
           const socket = socketConnection(searchParams.get('token'));
           const uuid = searchParams.get('uuid');
           const iceCandidates = await socket.emitWithAck('getIce', uuid, 'professional');
-
-          console.log('========================Received ICE', iceCandidates);
 
           iceCandidates.forEach(iceC=>{
             for(const s in streams){
@@ -87,14 +92,13 @@ const ProMainVideoPage = () => {
                 const pc = streams[s].peerConnection;
                 const answer = await pc.createAnswer();
                 await pc.setLocalDescription(answer);
-                console.log("Answer created!", answer);
 
                 dispatch(updateCallStatus('haveCreatedAnswer', true));
                 dispatch(updateCallStatus('answer', answer));
 
                 const token = searchParams.get('token');
-                const socket = socketConnection(token);
                 const uuid = searchParams.get('uuid');
+                const socket = socketConnection(token);
                 socket.emit('newAnswer', {answer, uuid});
 
             }
@@ -108,6 +112,7 @@ const ProMainVideoPage = () => {
     },[callStatus.audio, callStatus.video, callStatus.haveCreatedAnswer]);
 
 
+  // Once the offer updated in redux this useEffect will run and add that offer to the remotedescription
   useEffect(()=>{
     const asyncAddAnswer = async()=>{
         //listen for changes to callStatus.answer
@@ -116,8 +121,6 @@ const ProMainVideoPage = () => {
             if(s !== "localStream"){
                 const pc = streams[s].peerConnection;
                 await pc.setRemoteDescription(callStatus.offer);
-                console.log(pc.signalingState)
-                console.log("Answer added!")
             }
         }
     }

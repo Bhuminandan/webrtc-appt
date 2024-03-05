@@ -1,6 +1,4 @@
-// Function to update all peerConnections and update redux call
-
-import updateCallStatus from "../../redux-elements/actions/updateCallStatus";
+// Function to update all peerConnections 
 
 const startAudioStream = (streams)=>{
 

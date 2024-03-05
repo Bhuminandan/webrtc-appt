@@ -5,8 +5,6 @@ const proDashboardSocketListeners = (socket, setApptInfo, dispatch) => {
     // This apptData is for prodashboard, this will come from server 
     // For the perticular professional
     socket.on('apptData', (apptData) => {
-
-        console.log(apptData);
         setApptInfo(apptData);
     });
 
